@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using WEB_PROGRAMLAMA_ODEVİ.Entities;
 
@@ -16,6 +17,18 @@ namespace WEB_PROGRAMLAMA_ODEVİ
                 opts.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
 
+            builder.Services
+                .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(opts =>
+                {
+                    opts.Cookie.Name = ".WebApplication2.auth";
+                    opts.ExpireTimeSpan = TimeSpan.FromDays(3);
+                    opts.SlidingExpiration = false;
+                    opts.LoginPath = "/Account/Login";
+                    opts.LogoutPath = "/Account/Logout";
+                    opts.AccessDeniedPath = "/Home/AccessDenied";
+                });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -26,6 +39,8 @@ namespace WEB_PROGRAMLAMA_ODEVİ
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

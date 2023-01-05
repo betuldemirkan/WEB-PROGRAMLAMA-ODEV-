@@ -1,5 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using NETCore.Encrypt.Extensions;
+using System.Security.Claims;
 using WEB_PROGRAMLAMA_ODEVİ.Entities;
 using WEB_PROGRAMLAMA_ODEVİ.Models;
 
@@ -9,6 +13,7 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
     {
         private readonly DatabaseContext _databaseContext;
         private readonly IConfiguration _configuration;
+        //string hashedPassword;
 
         public AccountController(DatabaseContext databaseContext, IConfiguration configuration)
         {
@@ -25,7 +30,37 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Login işlemleri yapılacak
+                //string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
+                //string saltedPassword = model.Password + md5Salt;
+                //hashedPassword = saltedPassword.MD5();
+
+                User user = _databaseContext.Users.SingleOrDefault(x => x.Username.ToLower() == model.Username.ToLower() && x.Password == model.Password);
+
+                if (user != null)
+                {
+                    if (user.Locked)
+                    {
+                        ModelState.AddModelError(nameof(model.Username), "User is locked.");
+                        return View(model);
+                    }
+
+                    List<Claim> claims = new List<Claim>();
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+                    claims.Add(new Claim(ClaimTypes.Name, user.FullName ?? string.Empty));
+                    claims.Add(new Claim("Username", user.Username));
+
+                    ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                    ClaimsPrincipal principal = new ClaimsPrincipal(identity);
+
+                    HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Username or password is incorrect.");
+                }
             }
             return View();
         }
@@ -37,12 +72,18 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
         [HttpPost]
         public IActionResult Register(RegisterViewModel model)
         {
-            if (ModelState.IsValid)
+            if(_databaseContext.Users.Any(x => x.Username.ToLower() == model.Username.ToLower())) 
             {
-                string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-                string saltedPassword = model.Password + md5Salt;
-                string hashedPassword = saltedPassword.MD5();
+                ModelState.AddModelError(nameof(model.Username), "Username is already exists.");
+                View(model);
             }
+
+            //if (ModelState.IsValid)
+            //{
+            //    string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
+            //    string saltedPassword = model.Password + md5Salt;
+            //    string hashedPassword = saltedPassword.MD5();
+            //}
 
             User user = new()
             {
@@ -62,11 +103,17 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            return View();
+            return View(model);
         }
         public IActionResult Profile()
         {
             return View();
+        }
+
+        public IActionResult Logout()
+        {
+            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction(nameof(Login));
         }
     }
 }
