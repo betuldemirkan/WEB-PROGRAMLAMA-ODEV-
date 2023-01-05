@@ -6,9 +6,11 @@ using NETCore.Encrypt.Extensions;
 using System.Security.Claims;
 using WEB_PROGRAMLAMA_ODEVİ.Entities;
 using WEB_PROGRAMLAMA_ODEVİ.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
 {
+    [Authorize]
     public class AccountController : Controller
     {
         private readonly DatabaseContext _databaseContext;
@@ -20,11 +22,14 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
             _databaseContext = databaseContext;
            _configuration = configuration;
         }
+
+        [AllowAnonymous] //authorize olmasın
         public IActionResult Login()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult Login(LoginViewModel model)
         {
@@ -64,11 +69,14 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
             }
             return View();
         }
+
+        [AllowAnonymous]
         public IActionResult Register()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public IActionResult Register(RegisterViewModel model)
         {
@@ -105,11 +113,14 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
 
             return View(model);
         }
+
+        //authorize olsun
         public IActionResult Profile()
         {
             return View();
         }
 
+        //authorize olsun
         public IActionResult Logout()
         {
             HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
