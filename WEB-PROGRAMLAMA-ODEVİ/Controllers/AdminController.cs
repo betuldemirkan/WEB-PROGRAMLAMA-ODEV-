@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
 { 
-    [Authorize]
+    [Authorize (Roles="Admin")]
     public class AdminController : Controller
     {
        
