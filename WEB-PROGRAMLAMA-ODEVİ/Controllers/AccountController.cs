@@ -17,8 +17,7 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
     {
         private readonly DatabaseContext _databaseContext;
         private readonly IConfiguration _configuration;
-        //string hashedPassword;
-
+        
         public AccountController(DatabaseContext databaseContext, IConfiguration configuration)
         {
             _databaseContext = databaseContext;
@@ -37,17 +36,13 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
         {
             if (ModelState.IsValid)
             {
-                //string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-                //string saltedPassword = model.Password + md5Salt;
-                //hashedPassword = saltedPassword.MD5();
-
                 User user = _databaseContext.Users.SingleOrDefault(x => x.Username.ToLower() == model.Username.ToLower() && x.Password == model.Password);
 
                 if (user != null)
                 {
                     if (user.Locked)
                     {
-                        ModelState.AddModelError(nameof(model.Username), "User is locked.");
+                        ModelState.AddModelError(nameof(model.Username), "User kilitlendi.");
                         return View(model);
                     }
 
@@ -57,6 +52,8 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
                     claims.Add(new Claim(ClaimTypes.Role, user.Role));
                     claims.Add(new Claim("Username", user.Username));
 
+
+                    //Authencitation
                     ClaimsIdentity identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
                     ClaimsPrincipal principal = new ClaimsPrincipal(identity);
@@ -67,7 +64,7 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("", "Username or password is incorrect.");
+                    ModelState.AddModelError("", "Username veya password hatalı.");
                 }
             }
             return View();
@@ -85,16 +82,10 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
         {
             if(_databaseContext.Users.Any(x => x.Username.ToLower() == model.Username.ToLower())) 
             {
-                ModelState.AddModelError(nameof(model.Username), "Username is already exists.");
+                ModelState.AddModelError(nameof(model.Username), "Bu Username zaten kullanılmakta.");
                 View(model);
             }
 
-            //if (ModelState.IsValid)
-            //{
-            //    string md5Salt = _configuration.GetValue<string>("AppSettings:MD5Salt");
-            //    string saltedPassword = model.Password + md5Salt;
-            //    string hashedPassword = saltedPassword.MD5();
-            //}
 
             User user = new()
             {
@@ -107,7 +98,7 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
 
             if(affectedRowCount == 0) 
             {
-                ModelState.AddModelError("", "User can not be added.");
+                ModelState.AddModelError("", "User eklenemedi.");
             }
             else
             {
@@ -163,7 +154,7 @@ namespace WEB_PROGRAMLAMA_ODEVİ.Controllers
                 user.Password = hashedPassword;
                 _databaseContext.SaveChanges();
 
-                ViewData["result"] = "PasswordChanged";
+                ViewData["result"] = "Password değiştirildi.";
             }
 
             ProfileInfoLoader();
